@@ -306,8 +306,7 @@ function M.discover_upnp()
         local output = handle:read("*all")
         handle:close()
         
-        for line in output:gmatch("[^
-]+") do
+        for line in output:gmatch("[^\r\n]+") do
             if line:find("USN:") or line:find("LOCATION:") then
                 table.insert(devices, line)
             end
@@ -315,6 +314,288 @@ function M.discover_upnp()
     end
     
     return devices
+end
+
+-- WiFi сканирование через iwlist
+function M.scan_wifi()
+    local networks = {}
+    
+    -- получаем список wifi интерфейсов
+    local handle = io.popen("iw dev 2>/dev/null | grep Interface | awk '{print $2}'")
+    if not handle then return networks end
+    
+    local interfaces = {}
+    for iface in handle:lines() do
+        table.insert(interfaces, iface)
+    end
+    handle:close()
+    
+    -- сканируем каждый интерфейс
+    for _, iface in ipairs(interfaces) do
+        local scan_handle = io.popen("iwlist " .. iface .. " scan 2>/dev/null || echo ''")
+        if scan_handle then
+            local output = scan_handle:read("*all")
+            scan_handle:close()
+            
+            local current_net = {}
+            for line in output:gmatch("[^\n]+") do
+                -- парсинг cell
+                local cell = line:match("Cell %d+ - Address: ([%x:]+)")
+                if cell then
+                    if current_net.address then
+                        table.insert(networks, current_net)
+                    end
+                    current_net = {address = cell, iface = iface}
+                end
+                
+                -- парсинг essid
+                local essid = line:match("ESSID:\"([^\"]+)\"")
+                if essid then
+                    current_net.name = essid
+                end
+                
+                -- парсинг channel
+                local channel = line:match("Channel:(%d+)")
+                if channel then
+                    current_net.channel = tonumber(channel)
+                end
+                
+                -- парсинг frequency
+                local freq = line:match("Frequency:([%d%.]+) GHz")
+                if freq then
+                    current_net.frequency = tonumber(freq)
+                end
+                
+                -- парсинг signal level
+                local signal = line:match("Signal level[=:](%-?%d+)")
+                if signal then
+                    current_net.signal = tonumber(signal)
+                end
+                
+                -- парсинг encryption
+                if line:find("Encryption key:on") then
+                    current_net.encrypted = true
+                elseif line:find("Encryption key:off") then
+                    current_net.encrypted = false
+                end
+            end
+            
+            -- добавляем последнюю сеть
+            if current_net.address then
+                table.insert(networks, current_net)
+            end
+        end
+    end
+    
+    return networks
+end
+
+-- анализ трафика через /proc/net/dev
+function M.analyze_traffic()
+    local stats = {}
+    
+    local f = io.open("/proc/net/dev", "r")
+    if not f then return stats end
+    
+    -- пропускаем заголовки
+    f:read("*line")
+    f:read("*line")
+    
+    for line in f:lines() do
+        local iface, rx_bytes, rx_packets, rx_errs, rx_drop, _, _, _, _, 
+              tx_bytes, tx_packets, tx_errs, tx_drop = line:match(
+            "^%s*(%S+):%s*(%d+)%s*(%d+)%s*(%d+)%s*(%d+)%s*%d+%s*%d+%s*%d+%s*%d+%s*(%d+)%s*(%d+)%s*(%d+)%s*(%d+)"
+        )
+        
+        if iface then
+            table.insert(stats, {
+                interface = iface,
+                rx_bytes = tonumber(rx_bytes) or 0,
+                rx_packets = tonumber(rx_packets) or 0,
+                rx_errors = tonumber(rx_errs) or 0,
+                rx_dropped = tonumber(rx_drop) or 0,
+                tx_bytes = tonumber(tx_bytes) or 0,
+                tx_packets = tonumber(tx_packets) or 0,
+                tx_errors = tonumber(tx_errs) or 0,
+                tx_dropped = tonumber(tx_drop) or 0
+            })
+        end
+    end
+    
+    f:close()
+    return stats
+end
+
+-- traceroute упрощенный
+function M.traceroute(host, max_hops)
+    max_hops = max_hops or 30
+    local hops = {}
+    
+    for ttl = 1, max_hops do
+        -- используем ping с установкой ttl
+        local cmd = string.format("ping -c 1 -t %d -W 2 %s 2>/dev/null | grep -o 'from [%d%.]*' | head -1", ttl, host, ttl)
+        local handle = io.popen(cmd)
+        local result = handle:read("*line")
+        handle:close()
+        
+        if result then
+            local hop_ip = result:match("from%s+([%d%.]+)")
+            if hop_ip then
+                table.insert(hops, {
+                    hop = ttl,
+                    ip = hop_ip,
+                    hostname = c_resolve_hostname(hop_ip) or hop_ip
+                })
+                
+                -- достигли цели
+                if hop_ip == host then
+                    break
+                end
+            end
+        else
+            table.insert(hops, {hop = ttl, ip = "*", hostname = "timeout"})
+        end
+    end
+    
+    return hops
+end
+
+-- информация о dhcp
+function M.get_dhcp_info()
+    local info = {}
+    
+    -- проверяем lease файлы
+    local lease_files = {
+        "/var/lib/dhcp/dhclient.leases",
+        "/var/lib/dhclient/dhclient.leases",
+        "/var/lib/NetworkManager/dhclient.leases"
+    }
+    
+    for _, file in ipairs(lease_files) do
+        local f = io.open(file, "r")
+        if f then
+            local content = f:read("*all")
+            f:close()
+            
+            -- парсим lease
+            for lease_block in content:gmatch("lease%s+{(.-)}%s*}") do
+                local lease = {}
+                
+                local ip = lease_block:match("lease%s+([%d%.]+)")
+                if ip then lease.ip = ip end
+                
+                local router = lease_block:match("option%s+routers%s+([%d%.]+)")
+                if router then lease.router = router end
+                
+                local subnet = lease_block:match("option%s+subnet%-mask%s+([%d%.]+)")
+                if subnet then lease.subnet = subnet end
+                
+                local dns = lease_block:match("option%s+domain%-name%-servers%s+([%d%. ,]+);")
+                if dns then lease.dns = dns end
+                
+                local server = lease_block:match("server%-name%s+\"([^\"]+)\"")
+                if server then lease.server = server end
+                
+                table.insert(info, lease)
+            end
+        end
+    end
+    
+    return info
+end
+
+-- обнаружение ближайших bluetooth устройств
+function M.scan_bluetooth()
+    local devices = {}
+    
+    -- проверяем доступность bluetooth
+    local check_handle = io.popen("which hcitool 2>/dev/null")
+    local has_hcitool = check_handle:read("*line")
+    check_handle:close()
+    
+    if not has_hcitool or has_hcitool == "" then
+        return {error = "hcitool not found, install bluez-utils"}
+    end
+    
+    -- сканирование
+    local handle = io.popen("timeout 10 hcitool scan 2>/dev/null || echo ''")
+    if handle then
+        -- пропускаем заголовок
+        handle:read("*line")
+        
+        for line in handle:lines() do
+            local mac, name = line:match("^%s*([%x:]+)%s+(.+)$")
+            if mac and name then
+                table.insert(devices, {
+                    mac = mac,
+                    name = name,
+                    type = "classic"
+                })
+            end
+        end
+        handle:close()
+    end
+    
+    -- ble сканирование через bluetoothctl
+    local ble_handle = io.popen("timeout 10 bluetoothctl scan on 2>/dev/null & sleep 5 && bluetoothctl devices | head -20 || echo ''")
+    if ble_handle then
+        for line in ble_handle:lines() do
+            local mac, name = line:match("Device%s+([%x:]+)%s+(.+)$")
+            if mac then
+                -- проверяем есть ли уже
+                local found = false
+                for _, d in ipairs(devices) do
+                    if d.mac == mac then
+                        found = true
+                        break
+                    end
+                end
+                if not found then
+                    table.insert(devices, {
+                        mac = mac,
+                        name = name or "Unknown BLE",
+                        type = "ble"
+                    })
+                end
+            end
+        end
+        ble_handle:close()
+    end
+    
+    return devices
+end
+
+-- полное сетевое сканирование
+function M.full_network_scan()
+    local results = {
+        timestamp = os.date("%Y-%m-%d %H:%M:%S"),
+        local_config = M.get_network_config(),
+        interfaces = {},
+        arp_table = M.get_neighbors(),
+        services = M.discover_services(),
+        upnp_devices = M.discover_upnp(),
+        smb_shares = M.discover_smb(),
+        wifi_networks = M.scan_wifi(),
+        traffic_stats = M.analyze_traffic(),
+        protocols = M.analyze_protocols(),
+        connections = M.get_connections()
+    }
+    
+    -- информация об интерфейсах
+    local f = io.open("/proc/net/dev", "r")
+    if f then
+        f:read("*line")
+        f:read("*line")
+        for line in f:lines() do
+            local iface = line:match("^%s*(%S+):")
+            if iface then
+                table.insert(results.interfaces, iface)
+            end
+        end
+        f:close()
+    end
+    
+    return results
 end
 
 return M
