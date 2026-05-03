@@ -1,54 +1,54 @@
-# Device Analyzer
+# анализатор устройств
 
-A comprehensive Linux device discovery and analysis tool combining multiple programming languages for maximum capability.
+комплексный инструмент для linux по обнаружению и анализу устройств, объединяющий несколько языков программирования для максимальных возможностей.
 
-## Architecture
+## архитектура
 
-| Component | Language | Purpose |
+| компонент | язык | назначение |
 |-----------|----------|---------|
-| Core UI & System Integration | C (ncurses) | Windowed menu interface, USB scanning, system integration |
-| Low-level Hardware Access | x86_64 Assembly | CPUID, MSR access, serial numbers, deep hardware inspection |
-| Network Analysis | Lua | Protocol analysis, network discovery, mDNS/SSDP |
-| Data Analysis | Python | Advanced analytics, JSON export, vendor database |
+| ядро интерфейса и системная интеграция | c (ncurses) | оконный интерфейс, сканирование usb, системная интеграция |
+| низкоуровневый доступ к железу | x86_64 assembly | cpuid, доступ к msr, серийные номера, глубокая инспекция железа |
+| сетевой анализ | lua | анализ протоколов, сетевое обнаружение, mdns/ssdp |
+| анализ данных | python | продвинутая аналитика, json экспорт, база вендоров |
 
-## Features
+## возможности
 
-### USB Device Analysis
-- Enumerate all connected USB devices
-- Read device descriptors and properties
-- Port status and bandwidth information
-- Power management details
-- Device tree visualization
+### анализ usb устройств
+- перечисление всех подключенных usb устройств
+- чтение дескрипторов и свойств устройств
+- информация о портах и пропускной способности
+- детали управления питанием
+- визуализация дерева устройств
 
-### Hardware Information
-- CPUID detailed information
-- CPU features and capabilities
-- Memory layout and DIMM info
-- DMI/SMBIOS data
-- UEFI/Secure Boot status
-- TPM information
-- ACPI tables
+### информация об оборудовании
+- детальная информация cpuid
+- фичи и возможности процессора
+- раскладка памяти и информация о dimm
+- данные dmi/smbios
+- статус uefi/secure boot
+- информация о tpm
+- таблицы acpi
 
-### Network Discovery
-- Local interface enumeration
-- ARP table analysis
-- mDNS/Bonjour service discovery
-- Port scanning
-- Protocol statistics
-- Connection tracking
+### сетевое обнаружение
+- перечисление локальных интерфейсов
+- анализ arp таблицы
+- обнаружение сервисов mdns/bonjour
+- сканирование портов
+- статистика протоколов
+- отслеживание соединений
 
-### Data Analysis
-- USB vendor identification
-- Device categorization
-- JSON report generation
-- System summary reports
+### анализ данных
+- идентификация вендоров usb
+- категоризация устройств
+- генерация json отчетов
+- сводные отчеты системы
 
-## Building
+## сборка
 
-### Dependencies
+### зависимости
 
 ```bash
-# Debian/Ubuntu
+# debian/ubuntu
 sudo apt-get install -y \
     build-essential \
     nasm \
@@ -59,7 +59,7 @@ sudo apt-get install -y \
     libpython3-dev \
     pkg-config
 
-# Fedora/RHEL
+# fedora/rhel
 sudo dnf install -y \
     gcc \
     nasm \
@@ -69,116 +69,117 @@ sudo dnf install -y \
     python3-devel
 ```
 
-### Compile
+### компиляция
 
 ```bash
 make
 ```
 
-Or with debug symbols:
+или с символами отладки:
 ```bash
 make debug
 ```
 
-### Install Dependencies (convenience)
+### установка зависимостей (для удобства)
 
 ```bash
 make install-deps
 ```
 
-## Running
+## запуск
 
 ```bash
 ./bin/device_analyzer
 ```
 
-**Note:** Some features require root access for:
-- Reading kernel debug USB data
-- DMI/ACPI table access
-- Network raw socket operations
+**примечание:** некоторые фичи требуют root доступа для:
+- чтения отладочных данных usb ядра
+- доступа к таблицам dmi/acpi
+- операций с сырыми сокетами
 
-## Controls
+## управление
 
-| Key | Action |
+| клавиша | действие |
 |-----|--------|
-| ↑/↓ or k/j | Navigate menu |
-| Enter | Select item |
-| F1 | Show help |
-| Q | Quit |
+| ↑/↓ или k/j | навигация по меню |
+| enter | выбор пункта |
+| f1 | показать помощь |
+| q | выход |
 
-## Project Structure
+## структура проекта
 
 ```
 .
-├── src/              # C source files
-│   ├── main.c        # Entry point
-│   ├── ui.c/h        # Ncurses windowed interface
-│   ├── usb_scanner.c/h   # USB device enumeration
-│   ├── hardware_info.c/h # Hardware inspection
-│   ├── lua_bridge.c/h    # Lua integration
-│   └── python_bridge.c/h # Python integration
-├── asm/              # Assembly source
-│   ├── cpuinfo.asm   # CPUID and MSR access
-│   └── hardware.asm  # Additional hardware routines
-├── lua/              # Lua scripts
-│   ├── network_scan.lua    # Network discovery
-│   └── protocol_analyzer.lua # Protocol decoding
-├── python/           # Python modules
-│   └── analyzer.py   # Data analysis module
-├── Makefile          # Build system
-└── README.md         # This file
+├── src/              # исходники на c
+│   ├── main.c        # точка входа
+│   ├── ui.c/h        # оконный интерфейс ncurses
+│   ├── usb_scanner.c/h   # перечисление usb устройств
+│   ├── hardware_info.c/h # инспекция железа
+│   ├── lua_bridge.c/h    # интеграция lua
+│   └── python_bridge.c/h # интеграция python
+├── asm/              # исходники на ассемблере
+│   ├── cpuinfo.asm   # доступ к cpuid и msr
+│   └── hardware.asm  # дополнительные процедуры железа
+├── lua/              # скрипты lua
+│   ├── network_scan.lua    # сетевое обнаружение
+│   └── protocol_analyzer.lua # декодирование протоколов
+├── python/           # модули python
+│   └── analyzer.py   # модуль анализа данных
+├── Makefile          # система сборки
+└── README.md         # этот файл
 ```
 
-## Implementation Details
+## детали реализации
 
-### C Core
-- Uses `libudev` for USB enumeration
-- `ncursesw` for Unicode-aware UI
-- Multi-window interface with menu, content, and status panels
+### ядро на c
+- использует `libudev` для перечисления usb
+- `ncursesw` для unicode-интерфейса
+- мульти-оконный интерфейс с панелями меню, контента и статуса
 
-### Assembly Module
-- NASM syntax for x86_64 Linux
-- CPUID for processor information
-- MSR (Model Specific Register) reading
-- TSC (Time Stamp Counter) access
+### модуль на ассемблере
+- синтаксис nasm для x86_64 linux
+- cpuid для информации о процессоре
+- чтение msr (model specific register)
+- доступ к tsc (time stamp counter)
 
-### Lua Network Module
-- Embedded in C via `liblua`
-- Raw socket operations exposed from C
-- Protocol analysis using /proc/net files
-- ARP table parsing
+### сетевой модуль lua
+- встраивается в c через `liblua`
+- операции с сырыми сокетами экспортированы из c
+- анализ протоколов через файлы /proc/net
+- парсинг arp таблицы
 
-### Python Analysis Module
-- Embedded Python 3 interpreter
-- Dataclass-based data structures
-- JSON export capabilities
-- Vendor ID database
+### модуль анализа python
+- встроенный интерпретатор python 3
+- структуры данных на dataclass
+- возможности json экспорта
+- база id вендоров
 
-## Security Notes
+## заметки о безопасности
 
-- Assembly module uses privileged instructions (CPUID, RDMSR)
-- Network scanning requires appropriate permissions
-- Some /sys and /proc files may need root access
-- Tool is designed for authorized system analysis only
+- модуль ассемблера использует привилегированные инструкции (cpuid, rdmsr)
+- сетевое сканирование требует соответствующих прав
+- некоторые файлы /sys и /proc могут требовать root доступ
+- инструмент разработан только для авторизованного системного анализа
 
-## License
+## лицензия
 
-MIT License - See individual source files for details.
+MIT License - см. отдельные исходные файлы для деталей.
 
-## Troubleshooting
+## устранение неполадок
 
-### "Terminal too small"
-Resize terminal to at least 80x24 characters.
+### "терминал слишком маленький"
+измените размер терминала минимум до 80x24 символов.
 
-### "Permission denied" for USB devices
-Run with sudo or add user to `plugdev` group.
+### "отказано в доступе" для usb устройств
+запустите с sudo или добавьте пользователя в группу `plugdev`.
 
-### Lua/Python bridge errors
-Ensure development libraries are installed:
+### ошибки моста lua/python
+убедитесь что установлены библиотеки разработки:
 - `liblua5.3-dev`
 - `python3-dev`
 - `libpython3-dev`
 
-### Assembly compilation errors
-Ensure NASM is installed: `sudo apt-get install nasm`
+### ошибки компиляции ассемблера
+убедитесь что установлен nasm: `sudo apt-get install nasm`
+
 # Lemme-See-Ur-Devices
