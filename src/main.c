@@ -1,7 +1,7 @@
 /*
- * Device Analyzer - Main Entry Point
- * Linux device discovery and analysis tool
- * Multi-language architecture: C, ASM, Lua, Python
+ * анализатор устройств - главная точка входа
+ * инструмент обнаружения устройств для linux
+ * мульти-языковая архитектура: c, asm, lua, python
  */
 
 #include <stdio.h>
@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
     
     printf("Device Analyzer - Initializing...\n");
     
-    // Initialize subsystems
+    // инициализация подсистем
     if (ui_init() != 0) {
         fprintf(stderr, "Failed to initialize UI\n");
         return 1;
@@ -53,10 +53,10 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Warning: Python bridge failed to initialize\n");
     }
     
-    // Run main UI loop
+    // запуск главного цикла интерфейса
     ui_main_loop();
     
-    // Cleanup
+    // очистка
     python_bridge_cleanup();
     lua_bridge_cleanup();
     usb_scanner_cleanup();

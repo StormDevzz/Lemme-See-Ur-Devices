@@ -1,5 +1,5 @@
-; Assembly module for low-level CPU/hardware access
-; x86_64 Linux NASM syntax
+; модуль ассемблера для низкоуровневого доступа к процессору/железу
+; синтаксис nasm x86_64 linux
 
 section .text
 global asm_cpuid
@@ -15,7 +15,7 @@ global asm_read_tsc
 asm_cpuid:
     push rbx
     push r12
-    mov r12, rdx        ; Save result pointer
+    mov r12, rdx        ; сохраняем указатель на результат
     
     mov eax, edi        ; leaf
     mov ecx, esi        ; subleaf
@@ -31,11 +31,11 @@ asm_cpuid:
     ret
 
 ; void asm_get_cpu_vendor(char *buffer)
-; rdi = buffer (12 chars minimum)
+; rdi = буфер (минимум 12 символов)
 asm_get_cpu_vendor:
     push rbx
     
-    xor eax, eax        ; CPUID leaf 0 - vendor string
+    xor eax, eax        ; cpuid leaf 0 - строка производителя
     cpuid
     
     mov [rdi + 0], ebx
@@ -47,19 +47,19 @@ asm_get_cpu_vendor:
     ret
 
 ; void asm_get_cpu_brand(char *buffer)
-; rdi = buffer (48 chars minimum)
+; rdi = буфер (минимум 48 символов)
 asm_get_cpu_brand:
     push rbx
     push r12
-    mov r12, rdi        ; Save buffer pointer
+    mov r12, rdi        ; сохраняем указатель на буфер
     
-    ; Check if extended CPUID is supported
+    ; проверка поддержки расширенного cpuid
     mov eax, 0x80000000
     cpuid
     cmp eax, 0x80000004
     jb .no_brand
     
-    ; Get brand string (3 leaves: 0x80000002, 0x80000003, 0x80000004)
+    ; получение строки бренда (3 листа: 0x80000002, 0x80000003, 0x80000004)
     mov eax, 0x80000002
     cpuid
     mov [r12 + 0], eax
@@ -82,13 +82,13 @@ asm_get_cpu_brand:
     mov [r12 + 44], edx
     mov byte [r12 + 48], 0
     
-    ; Trim leading spaces
+    ; обрезка начальных пробелов
     mov rcx, 48
 .trim_loop:
     mov al, [r12]
     cmp al, ' '
     jne .done
-    ; Shift string left by 1
+    ; сдвиг строки влево на 1
     push r12
     push rcx
     mov rsi, r12
@@ -114,19 +114,19 @@ asm_get_cpu_brand:
 ; uint32_t asm_get_cpu_signature(void)
 asm_get_cpu_signature:
     push rbx
-    mov eax, 1          ; CPUID leaf 1
+    mov eax, 1          ; cpuid leaf 1
     cpuid
-    ; Return signature in EAX
+    ; возврат сигнатуры в eax
     pop rbx
     ret
 
 ; uint64_t asm_read_msr(uint32_t msr)
-; rdi = msr number
+; rdi = номер msr
 asm_read_msr:
     push rbx
-    mov ecx, edi        ; MSR number
-    rdmsr               ; Read MSR into EDX:EAX
-    shl rdx, 32         ; Combine into RAX
+    mov ecx, edi        ; номер msr
+    rdmsr               ; чтение msr в edx:eax
+    shl rdx, 32         ; объединение в rax
     or rax, rdx
     pop rbx
     ret
@@ -134,10 +134,10 @@ asm_read_msr:
 ; int asm_has_rdtscp(void)
 asm_has_rdtscp:
     push rbx
-    mov eax, 0x80000001 ; Extended CPUID
+    mov eax, 0x80000001 ; расширенный cpuid
     cpuid
     mov eax, edx
-    shr eax, 27         ; RDTSCP flag is bit 27
+    shr eax, 27         ; флаг rdtscp - бит 27
     and eax, 1
     pop rbx
     ret
@@ -145,20 +145,20 @@ asm_has_rdtscp:
 ; uint64_t asm_read_tsc(void)
 asm_read_tsc:
     push rbx
-    rdtsc               ; Read TSC into EDX:EAX
+    rdtsc               ; чтение tsc в edx:eax
     shl rdx, 32
     or rax, rdx
     pop rbx
     ret
 
-; Additional low-level hardware access functions
+; дополнительные функции низкоуровневого доступа к железу
 
 ; int asm_cpu_has_feature(uint32_t feature)
 ; feature bits: 0-31 = EDX from CPUID(1), 32-63 = ECX from CPUID(1)
-; rdi = feature number
+; rdi = номер фичи
 asm_cpu_has_feature:
     push rbx
-    mov r12d, edi       ; Save feature number
+    mov r12d, edi       ; сохраняем номер фичи
     
     mov eax, 1
     cpuid
@@ -166,7 +166,7 @@ asm_cpu_has_feature:
     cmp r12d, 32
     jb .check_edx
     
-    ; Check ECX
+    ; проверка ecx
     sub r12d, 32
     mov eax, ecx
     jmp .do_check

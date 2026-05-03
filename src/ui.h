@@ -3,13 +3,13 @@
 
 #include <ncurses.h>
 
-// Window definitions
+// определения окон
 #define WIN_MENU_WIDTH 30
 #define WIN_STATUS_HEIGHT 3
 #define MIN_COLS 80
 #define MIN_LINES 24
 
-// Menu items
+// пункты меню
 typedef enum {
     MENU_USB_DEVICES = 0,
     MENU_PCI_DEVICES,
@@ -25,29 +25,29 @@ typedef enum {
     MENU_COUNT
 } MenuItem;
 
-// UI functions
+// функции интерфейса
 int ui_init(void);
 void ui_cleanup(void);
 void ui_main_loop(void);
 
-// Window management
+// управление окнами
 void draw_border(WINDOW *win, const char *title);
 void draw_menu(void);
 void draw_content(void);
 void draw_status(void);
 void update_content(const char *text);
 
-// Scrolling
+// прокрутка
 void scroll_content_up(int lines);
 void scroll_content_down(int lines);
 void scroll_content_top(void);
 void scroll_content_bottom(void);
 
-// Event handling
+// обработка событий
 void handle_input(int ch);
 void refresh_all(void);
 
-// Content displays
+// отображение контента
 void show_usb_devices(void);
 void show_pci_devices(void);
 void show_network_scan(void);
@@ -59,4 +59,4 @@ void show_network_protocols(void);
 void show_data_analysis(void);
 void show_help(void);
 
-#endif // UI_H
+#endif // ui_h

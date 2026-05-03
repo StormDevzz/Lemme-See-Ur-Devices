@@ -1,5 +1,5 @@
 /*
- * UI Module - Windowed menu interface using ncurses
+ * модуль интерфейса - оконное меню с использованием ncurses
  */
 
 #include "ui.h"
@@ -69,13 +69,13 @@ int ui_init(void) {
     int rows, cols;
     getmaxyx(stdscr, rows, cols);
     
-    // Ensure minimum reasonable size, but allow smaller terminals
+    // минимальный разумный размер, но позволяем меньшие терминалы
     int menu_width = (cols > 40) ? WIN_MENU_WIDTH : cols / 3;
     if (menu_width < 15) menu_width = 15;
     
     int status_height = (rows > 5) ? WIN_STATUS_HEIGHT : 1;
     
-    // Create windows with dynamic sizing
+    // создание окон с динамическим размером
     win_menu = newwin(rows - status_height, menu_width, 0, 0);
     win_content = newwin(rows - status_height, cols - menu_width, 0, menu_width);
     win_status = newwin(status_height, cols, rows - status_height, 0);
@@ -141,7 +141,7 @@ void draw_menu(void) {
 }
 
 static void rebuild_content_lines(void) {
-    // Free old lines
+    // освобождаем старые строки
     if (content_lines) {
         for (int i = 0; i < content_line_count; i++) {
             free(content_lines[i]);
@@ -149,7 +149,7 @@ static void rebuild_content_lines(void) {
         free(content_lines);
     }
     
-    // Count lines
+    // подсчет строк
     content_line_count = 0;
     char *tmp = strdup(content_buffer);
     char *p = tmp;
@@ -159,7 +159,7 @@ static void rebuild_content_lines(void) {
     }
     if (content_buffer[0] && p[-1] != '\n') content_line_count++;
     
-    // Allocate and fill
+    // выделение памяти и заполнение
     content_lines = malloc(sizeof(char*) * (content_line_count + 1));
     p = content_buffer;
     int idx = 0;
@@ -191,20 +191,20 @@ void draw_content(void) {
     int max_y = getmaxy(win_content) - 2;
     int max_lines = max_y - 2;
     
-    // Ensure scroll is within bounds
+    // проверка границ прокрутки
     if (content_scroll < 0) content_scroll = 0;
     if (content_scroll > content_line_count - max_lines) {
         content_scroll = content_line_count - max_lines;
         if (content_scroll < 0) content_scroll = 0;
     }
     
-    // Draw visible lines
+    // отрисовка видимых строк
     for (int i = 0; i < max_lines && (content_scroll + i) < content_line_count; i++) {
         mvwprintw(win_content, 2 + i, 2, "%.*s", getmaxx(win_content) - 4, 
                   content_lines[content_scroll + i]);
     }
     
-    // Draw scroll indicator if needed
+    // индикатор прокрутки при необходимости
     if (content_line_count > max_lines) {
         int scroll_pct = (content_scroll * 100) / (content_line_count - max_lines);
         mvwprintw(win_content, max_y - 1, getmaxx(win_content) - 8, "[%2d%%]", scroll_pct);
@@ -324,7 +324,7 @@ void show_hardware_info(void) {
     strcat(buffer, "Hardware Information (Assembly-enhanced)\n");
     strcat(buffer, "=========================================\n\n");
     
-    // Get CPU info from ASM
+    // информация о процессоре из asm
     char *cpu_serial = hardware_get_cpu_serial();
     if (cpu_serial) {
         strcat(buffer, "CPU Serial/Info:\n");
@@ -333,7 +333,7 @@ void show_hardware_info(void) {
         free(cpu_serial);
     }
     
-    // Get CPUID info
+    // информация cpuid
     char *cpuid_info = hardware_get_cpuid_info();
     if (cpuid_info) {
         strcat(buffer, "CPUID Information:\n");
@@ -342,7 +342,7 @@ void show_hardware_info(void) {
         free(cpuid_info);
     }
     
-    // Get deep hardware scan (ASM)
+    // глубокое сканирование железа (asm)
     char *deep_info = hardware_get_deep_scan_info();
     if (deep_info) {
         strcat(buffer, "Deep Hardware Scan:\n");
@@ -350,7 +350,7 @@ void show_hardware_info(void) {
         free(deep_info);
     }
     
-    // Get DMI info
+    // информация dmi
     char *dmi_info = hardware_get_dmi_info();
     if (dmi_info) {
         strcat(buffer, "\n");

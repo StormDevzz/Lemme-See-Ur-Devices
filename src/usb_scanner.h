@@ -3,7 +3,7 @@
 
 #include <libudev.h>
 
-// USB device info structure
+// структура информации об usb устройстве
 typedef struct {
     char vendor[256];
     char model[256];
@@ -19,7 +19,7 @@ typedef struct {
     unsigned int speed;
 } usb_device_info_t;
 
-// USB hub/port info
+// информация о usb хабе/порте
 typedef struct {
     char hub_path[256];
     int port_count;
@@ -27,7 +27,7 @@ typedef struct {
     char power_status[64];
 } usb_hub_info_t;
 
-// Functions
+// функции
 int usb_scanner_init(void);
 void usb_scanner_cleanup(void);
 
@@ -38,9 +38,9 @@ char* usb_get_detailed_port_info(void);
 int usb_enumerate_devices(usb_device_info_t **devices, int *count);
 void usb_free_device_list(usb_device_info_t *devices, int count);
 
-// Deep inspection
+// глубокая инспекция
 char* usb_get_device_tree(void);
 char* usb_get_power_info(void);
 char* usb_get_bandwidth_info(void);
 
-#endif // USB_SCANNER_H
+#endif // usb_scanner_h

@@ -1,5 +1,5 @@
-; Additional hardware access assembly routines
-; x86_64 Linux NASM syntax
+; дополнительные процедуры доступа к железу на ассемблере
+; синтаксис nasm x86_64 linux
 
 section .text
 global asm_read_cr0
@@ -42,7 +42,7 @@ asm_check_sse2:
     push rbx
     mov eax, 1
     cpuid
-    test edx, (1 << 26)    ; SSE2 bit
+    test edx, (1 << 26)    ; бит sse2
     setnz al
     movzx eax, al
     pop rbx
@@ -53,40 +53,40 @@ asm_check_avx:
     push rbx
     mov eax, 1
     cpuid
-    test ecx, (1 << 28)    ; AVX bit
+    test ecx, (1 << 28)    ; бит avx
     setnz al
     movzx eax, al
     pop rbx
     ret
 
-; Estimate TSC frequency using PIT (simplified)
+; оценка частоты tsc с помощью pit (упрощенно)
 ; uint64_t asm_get_tsc_freq(void)
-; Returns approximate TSC frequency in Hz
+; возвращает приблизительную частоту tsc в гц
 asm_get_tsc_freq:
     push rbx
     push r12
     push r13
     
-    ; Read initial TSC
+    ; чтение начального tsc
     rdtsc
     shl rdx, 32
     or rax, rdx
-    mov r12, rax        ; r12 = start TSC
+    mov r12, rax        ; r12 = начальный tsc
     
-    ; Simple delay loop (calibrated for roughly 10ms)
-    mov r13, 10000000   ; Loop count (architecture dependent approximation)
+    ; простая петля задержки (калибровано на ~10мс)
+    mov r13, 10000000    ; счетчик циклов (аппроксимация зависит от архитектуры)
 .delay_loop:
     dec r13
     jnz .delay_loop
     
-    ; Read final TSC
+    ; чтение конечного tsc
     rdtsc
     shl rdx, 32
     or rax, rdx
     
-    sub rax, r12        ; rax = TSC delta
+    sub rax, r12        ; rax = разница tsc
     
-    ; Multiply by 100 to get Hz (since we waited ~10ms)
+    ; умножение на 100 для получения гц (т.к. ждали ~10мс)
     mov rcx, 100
     mul rcx             ; rax * 100 -> result in RAX
     
@@ -95,15 +95,15 @@ asm_get_tsc_freq:
     pop rbx
     ret
 
-; Read PCI configuration space (if direct access is enabled)
+; чтение конфигурационного пространства pci (если прямой доступ разрешен)
 ; uint32_t asm_read_pci_config(uint8_t bus, uint8_t dev, uint8_t func, uint8_t reg)
 asm_read_pci_config:
-    ; Not used on modern Linux (uses /sys/bus/pci instead)
-    ; Kept as reference for bare-metal scenarios
+    ; не используется на современном linux (вместо этого /sys/bus/pci)
+    ; оставлено для справки по bare-metal сценариям
     xor eax, eax
     ret
 
-; Port I/O operations (for legacy hardware access)
+; операции ввода-вывода через порты (для устаревшего доступа к железу)
 ; uint8_t asm_inb(uint16_t port)
 global asm_inb
 asm_inb:

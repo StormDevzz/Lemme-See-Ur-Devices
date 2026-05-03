@@ -1,10 +1,10 @@
-; Deep Hardware Scanning Module
-; Low-level hardware inspection using x86_64 assembly
-; Designed to be lightweight and non-intrusive
+; модуль глубокого сканирования железа
+; низкоуровневая инспекция на ассемблере x86_64
+; разработан быть легким и ненавязчивым
 
 section .text
 
-; SMBIOS/DMI Entry Point Scan
+; сканирование точки входа smbios/dmi
 global asm_scan_smbios_entry
 global asm_read_smbios_structure
 global asm_get_acpi_rsdp
@@ -16,26 +16,26 @@ global asm_check_hypervisor
 global asm_get_cpuid_features
 global asm_get_cache_info
 
-; SMBIOS Entry Point structure
-; The SMBIOS entry point can be found at:
-; - 0x000F0000 - 0x000FFFFF (physical memory)
-; - Or using firmware tables via /sys/firmware/dmi
+; структура точки входа smbios
+; точка входа smbios может быть найдена по адресам:
+; - 0x000F0000 - 0x000FFFFF (физическая память)
+; - или используя таблицы прошивки через /sys/firmware/dmi
 
 ; void asm_scan_smbios_entry(uint64_t *out_addr, uint32_t *out_len)
-; Searches for SMBIOS signature in firmware region
+; поиск сигнатуры smbios в регионе прошивки
 asm_scan_smbios_entry:
     push rbx
     push r12
     push r13
     
-    mov r12, rdi        ; out_addr pointer
-    mov r13, rsi        ; out_len pointer
+    mov r12, rdi        ; указатель на выходной адрес
+    mov r13, rsi        ; указатель на выходную длину
     
-    ; Use CPUID to check if we can safely access firmware
+    ; используем cpuid для проверки безопасности доступа к прошивке
     mov eax, 1
     cpuid
     
-    ; Return 0 (use /sys interface instead - safer)
+    ; возвращаем 0 (вместо этого используем /sys - безопаснее)
     mov qword [r12], 0
     mov dword [r13], 0
     
@@ -45,65 +45,65 @@ asm_scan_smbios_entry:
     ret
 
 ; uint64_t asm_get_acpi_rsdp(void)
-; Returns address of ACPI RSDP (Root System Description Pointer)
-; or 0 if not available (UEFI vs BIOS differences)
+; возвращает адрес acpi rsdp (указатель на корневое описание системы)
+; или 0 если недоступно (различия uefi vs bios)
 asm_get_acpi_rsdp:
     xor rax, rax
-    ; Real implementation would search:
-; 1. EBDA (Extended BIOS Data Area) 0x40E
-    ; 2. 0x000E0000 - 0x000FFFFF (BIOS ROM)
-    ; 3. UEFI system table (if booted via UEFI)
+    ; реальная реализация должна искать:
+; 1. ebda (расширенная область данных bios) 0x40E
+    ; 2. 0x000E0000 - 0x000FFFFF (bios rom)
+    ; 3. таблица системы uefi (если загрузка через uefi)
     
-    ; For safety, return 0 - use /sys/firmware/acpi/tables instead
+    ; для безопасности возвращаем 0 - используем /sys/firmware/acpi/tables
     ret
 
 ; int asm_get_pci_config_space(uint8_t bus, uint8_t dev, uint8_t func, 
 ;                              uint8_t reg, uint32_t *out_data)
-; Reads PCI configuration space via CF8/CFC ports
-; Note: Modern Linux blocks direct port I/O, use /sys/bus/pci instead
+; чтение конфигурационного пространства pci через порты cf8/cfc
+; примечание: современный linux блокирует прямой порт i/o, используйте /sys/bus/pci
 asm_get_pci_config_space:
     push rbx
     
-    ; Build PCI config address
-    ; bits 31:24 = reserved (1)
-    ; bits 23:16 = bus
-    ; bits 15:11 = device
-    ; bits 10:8  = function
-    ; bits 7:0   = register (but we align to 4 bytes)
+    ; сборка адреса конфигурации pci
+    ; биты 31:24 = зарезервировано (1)
+    ; биты 23:16 = шина
+    ; биты 15:11 = устройство
+    ; биты 10:8  = функция
+    ; биты 7:0   = регистр (но выравниваем до 4 байт)
     
-    mov eax, 0x80000000     ; Enable bit (31)
-    movzx ebx, dil          ; bus
+    mov eax, 0x80000000     ; бит включения (31)
+    movzx ebx, dil          ; шина
     shl ebx, 16
     or eax, ebx
-    movzx ebx, sil          ; device
+    movzx ebx, sil          ; устройство
     shl ebx, 11
     or eax, ebx
-    movzx ebx, dl           ; function
+    movzx ebx, dl           ; функция
     shl ebx, 8
     or eax, ebx
     
-    ; This requires root and iopl - Linux restricts this
-    ; Return -1 to indicate "use /sys/bus/pci instead"
+    ; это требует root и iopl - linux ограничивает это
+    ; возвращаем -1 чтобы указать "используйте /sys/bus/pci"
     mov eax, -1
     
     pop rbx
     ret
 
 ; uint32_t asm_get_cpu_microcode(void)
-; Returns CPU microcode revision via MSR 0x8B
+; возвращает версию микрокода процессора через msr 0x8b
 asm_get_cpu_microcode:
     push rbx
     
-    ; Check if MSR is available (CPUID bit 5 of EDX)
+    ; проверка доступности msr (бит 5 edx в cpuid)
     mov eax, 1
     cpuid
     test edx, (1 << 5)
     jz .no_msr
     
-    ; Read IA32_BIOS_SIGN_ID MSR (0x8B)
+    ; чтение msr IA32_BIOS_SIGN_ID (0x8b)
     mov ecx, 0x8B
     rdmsr
-    ; EDX contains microcode revision
+    ; edx содержит версию микрокода
     mov eax, edx
     jmp .done
     
@@ -115,35 +115,35 @@ asm_get_cpu_microcode:
     ret
 
 ; uint64_t asm_get_tsc_frequency(void)
-; Estimates TSC frequency using CPUID or calibration
+; оценивает частоту tsc используя cpuid или калибровку
 asm_get_tsc_frequency:
     push rbx
     push r12
     
-    ; Try CPUID leaf 0x15 (TSC frequency on newer Intel CPUs)
+    ; пробуем cpuid leaf 0x15 (частота tsc на новых intel)
     mov eax, 0x15
     cpuid
     
-    ; If EBX != 0 and EAX != 0, TSC = ECX * EBX / EAX Hz
+    ; если ebx != 0 и eax != 0, tsc = ecx * ebx / eax гц
     test ebx, ebx
     jz .use_calibration
     test eax, eax
     jz .use_calibration
     
-    ; Calculate: TSC_freq = ECX * EBX / EAX
-    mov r12d, eax       ; save divisor
+    ; вычисление: частота_tsc = ecx * ebx / eax
+    mov r12d, eax       ; сохраняем делитель
     mov eax, ecx
     xor edx, edx
     mul ebx             ; EDX:EAX = ECX * EBX
     div r12d            ; EAX = result
     
-    ; Convert to Hz
+    ; конвертация в гц
     shl rdx, 32
     or rax, rdx
     jmp .done
     
 .use_calibration:
-    ; Return 0 - let C code use /proc/cpuinfo or calibrate
+    ; возвращаем 0 - пусть c код использует /proc/cpuinfo или калибрует
     xor rax, rax
     
 .done:
@@ -152,17 +152,17 @@ asm_get_tsc_frequency:
     ret
 
 ; int asm_check_hypervisor(void)
-; Returns hypervisor type if running virtualized
+; возвращает тип гипервизора если запущено в виртуализации
 asm_check_hypervisor:
     push rbx
     
-    ; CPUID leaf 0x1 - check ECX bit 31 (Hypervisor Present)
+    ; cpuid leaf 0x1 - проверка бита 31 ecx (гипервизор присутствует)
     mov eax, 1
     cpuid
     test ecx, (1 << 31)
     jz .not_virtual
     
-    ; Get hypervisor vendor ID via leaf 0x40000000
+    ; получение id вендора гипервизора через leaf 0x40000000
     mov eax, 0x40000000
     cpuid
     
@@ -181,7 +181,7 @@ asm_check_hypervisor:
 
 ; void asm_get_cpuid_features(uint32_t *features_ecx, uint32_t *features_edx, 
 ;                             uint32_t *ext_features_ecx, uint32_t *ext_features_edx)
-; Gets comprehensive CPU feature flags
+; получает полные флаги фич процессора
 asm_get_cpuid_features:
     push rbx
     push r12
@@ -194,13 +194,13 @@ asm_get_cpuid_features:
     mov r14, rdx        ; ext_features_ecx
     mov r15, rcx        ; ext_features_edx
     
-    ; Standard features (CPUID leaf 1)
+    ; стандартные фичи (cpuid leaf 1)
     mov eax, 1
     cpuid
     mov [r12], ecx
     mov [r13], edx
     
-    ; Extended features (CPUID leaf 7, subleaf 0)
+    ; расширенные фичи (cpuid leaf 7, subleaf 0)
     mov eax, 7
     xor ecx, ecx
     cpuid
@@ -215,15 +215,15 @@ asm_get_cpuid_features:
     ret
 
 ; uint64_t asm_read_memory_timing(void)
-; Returns memory timing info if available (via MSR or SMBIOS)
+; возвращает тайминги памяти если доступно (через msr или smbios)
 asm_read_memory_timing:
     xor rax, rax
-    ; Memory timing is usually not directly accessible via CPU registers
-    ; Would need to parse SMBIOS Type 17 or use SPD access via SMBus
+    ; тайминги памяти обычно не доступны напрямую через регистры cpu
+    ; нужно парсить smbios тип 17 или использовать spd доступ через smbus
     ret
 
 ; int asm_get_cache_info(uint32_t level, uint32_t *size, uint32_t *ways, uint32_t *sets)
-; Gets CPU cache information via CPUID leaf 4
+; получает информацию о кэше процессора через cpuid leaf 4
 asm_get_cache_info:
     push rbx
     push r12
@@ -236,7 +236,7 @@ asm_get_cache_info:
     mov r14, rdx        ; ways pointer
     mov r15, rcx        ; sets pointer
     
-    ; CPUID leaf 4 - Deterministic Cache Parameters
+    ; cpuid leaf 4 - детерминированные параметры кэша
     mov eax, 4
     mov ecx, r12d
     cpuid
@@ -249,11 +249,11 @@ asm_get_cache_info:
     ; EBX bits 31:22 = Ways of associativity (ways + 1)
     ; ECX bits 31:0 = Number of sets (sets + 1)
     
-    ; Check if valid cache
+    ; проверка валидности кэша
     test al, 0x1F
     jz .invalid_cache
     
-    ; Calculate size
+    ; вычисление размера
     ; size = ways * partitions * line_size * sets
     mov r8d, ebx
     shr r8d, 22        ; ways - 1
@@ -271,7 +271,7 @@ asm_get_cache_info:
     mov r11d, ecx      ; sets
     inc r11d
     
-    ; Calculate total size
+    ; вычисление полного размера
     mov eax, r8d       ; ways
     mul r9d            ; * partitions
     mul r10d           ; * line_size
@@ -281,14 +281,14 @@ asm_get_cache_info:
     mov [r14], r8d     ; ways
     mov [r15], r11d    ; sets
     
-    mov eax, 1         ; success
+    mov eax, 1         ; успех
     jmp .done
     
 .invalid_cache:
     mov dword [r13], 0
     mov dword [r14], 0
     mov dword [r15], 0
-    xor eax, eax     ; failure
+    xor eax, eax     ; неудача
     
 .done:
     pop r15

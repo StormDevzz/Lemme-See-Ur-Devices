@@ -1,5 +1,5 @@
-# Device Analyzer - Multi-language build system
-# Target: Linux x86_64
+# анализатор устройств - мульти-языковая система сборки
+# цель: linux x86_64
 
 CC = gcc
 AS = nasm
@@ -13,7 +13,7 @@ CFLAGS = -Wall -Wextra -O2 -std=c11 -D_GNU_SOURCE $(LUA_CFLAGS) $(PY_CFLAGS)
 LDFLAGS = -lncursesw -lpthread -ludev $(LUA_LIBS) $(PY_LDFLAGS)
 ASFLAGS = -f elf64
 
-# Directories
+# директории
 SRC_DIR = src
 ASM_DIR = asm
 LUA_DIR = lua
@@ -21,15 +21,15 @@ PY_DIR = python
 BUILD_DIR = build
 BIN_DIR = bin
 
-# Source files
+# исходные файлы
 C_SOURCES = $(wildcard $(SRC_DIR)/*.c)
 ASM_SOURCES = $(wildcard $(ASM_DIR)/*.asm)
 
-# Object files
+# объектные файлы
 C_OBJECTS = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(C_SOURCES))
 ASM_OBJECTS = $(patsubst $(ASM_DIR)/%.asm,$(BUILD_DIR)/%.o,$(ASM_SOURCES))
 
-# Target
+# целевой файл
 TARGET = $(BIN_DIR)/device_analyzer
 
 .PHONY: all clean install dirs
@@ -61,7 +61,7 @@ install-deps:
 	sudo apt-get update
 	sudo apt-get install -y build-essential nasm libncursesw5-dev libudev-dev liblua5.3-dev python3 python3-pip
 
-# Development helpers
+# помощники для разработки
 debug: CFLAGS += -g -DDEBUG
 debug: clean all
 
